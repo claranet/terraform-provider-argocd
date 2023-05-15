@@ -248,7 +248,7 @@ require (
 )
 
 replace (
-	github.com/argoproj/argo-cd/v2 => github.com/dje4om/argo-cd/v2 v2.0.0-20230515135140-c43b83596aab
+	github.com/argoproj/argo-cd/v2 => github.com/dje4om/argo-cd/v2 v2.0.0-20230515160242-96fb9bf3ecad
 	// https://github.com/argoproj/gitops-engine/issues/447
 	github.com/argoproj/gitops-engine => github.com/argoproj/gitops-engine v0.7.1-0.20220804190909-2bc3fef13e07
 

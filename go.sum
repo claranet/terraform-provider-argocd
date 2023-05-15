@@ -276,8 +276,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/rVNCu3HqELle0jiPLLBs70cWOduZpkS1E78=
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
-github.com/dje4om/argo-cd/v2 v2.0.0-20230515135140-c43b83596aab h1:AL0aHdR/r/+NBPtZWo7aYq0ye2MHhh88MztlMyYs2ic=
-github.com/dje4om/argo-cd/v2 v2.0.0-20230515135140-c43b83596aab/go.mod h1:ejMU7Dh7qJVzaBehpAqimloAKqWO/bx0LqQWtMijP94=
+github.com/dje4om/argo-cd/v2 v2.0.0-20230515160242-96fb9bf3ecad h1:8wgqNVoVey3qhtm5Er7XWn5RBJ55eNxBqRZjoXoU3U8=
+github.com/dje4om/argo-cd/v2 v2.0.0-20230515160242-96fb9bf3ecad/go.mod h1:ejMU7Dh7qJVzaBehpAqimloAKqWO/bx0LqQWtMijP94=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/distribution v2.8.0+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/distribution v2.8.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
