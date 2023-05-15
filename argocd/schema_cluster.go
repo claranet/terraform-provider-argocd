@@ -48,6 +48,11 @@ func clusterSchema() map[string]*schema.Schema {
 			MaxItems:    1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
+					"proxy": {
+						Type:        schema.TypeString,
+						Description: "Proxy.",
+						Optional:    true,
+					},
 					"aws_auth_config": {
 						Type:     schema.TypeList,
 						Optional: true,
