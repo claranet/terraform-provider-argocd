@@ -37,9 +37,9 @@ signs:
 release:
   draft: true
   disable: false
-  github:
-    owner: oboukili
-    name: terraform-provider-argocd
+  # github:
+  #   owner: oboukili
+  #   name: terraform-provider-argocd
 changelog:
   skip: false
   filters:
