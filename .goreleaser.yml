@@ -35,7 +35,8 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 release:
-  draft: true
+  # If you want to manually examine the release before its live, uncomment this line:
+  # draft: true
   disable: false
   # github:
   #   owner: oboukili
