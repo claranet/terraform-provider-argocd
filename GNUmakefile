@@ -28,14 +28,14 @@ test:
 	go test -v -cover -timeout=120s -parallel=4 ./...
 
 testacc:
-	TF_ACC=1 go test -v -cover -timeout 8m ./...
+	TF_ACC=1 go test -v -cover -timeout 20m ./...
 
 testacc_clean_env:
 	kind delete cluster --name argocd
 
 testacc_prepare_env:
 	sh scripts/testacc_prepare_env.sh
-	
+
 clean:
 	git clean -fXd -e \!vendor -e \!vendor/**/* -e \!.vscode
 
