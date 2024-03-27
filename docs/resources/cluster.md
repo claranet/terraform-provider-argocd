@@ -148,6 +148,7 @@ Optional:
 - `bearer_token` (String, Sensitive) Server requires Bearer authentication. The client will not attempt to use refresh tokens for an OAuth2 flow.
 - `exec_provider_config` (Block List, Max: 1) Configuration for an exec provider used to call an external command to perform cluster authentication See: https://godoc.org/k8s.io/client-go/tools/clientcmd/api#ExecConfig. (see [below for nested schema](#nestedblock--config--exec_provider_config))
 - `password` (String, Sensitive) Password for servers that require Basic authentication.
+- `proxy` (String) Proxy.
 - `tls_client_config` (Block List, Max: 1) Settings to enable transport layer security when connecting to the cluster. (see [below for nested schema](#nestedblock--config--tls_client_config))
 - `username` (String) Username for servers that require Basic authentication.
 
