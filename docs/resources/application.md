@@ -182,6 +182,7 @@ resource "argocd_application" "multiple_sources" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `status` (List of Object) Status information for the application. **Note**: this is not guaranteed to be up to date immediately after creating/updating an application unless `wait=true`. (see [below for nested schema](#nestedatt--status))
 
 <a id="nestedblock--metadata"></a>
 ### Nested Schema for `metadata`
@@ -290,12 +291,23 @@ Optional:
 
 Optional:
 
+- `file_parameter` (Block Set) File parameters for the helm template. (see [below for nested schema](#nestedblock--spec--source--helm--file_parameter))
+- `ignore_missing_value_files` (Boolean) Prevents 'helm template' from failing when `value_files` do not exist locally by not appending them to 'helm template --values'.
 - `parameter` (Block Set) Helm parameters which are passed to the helm template command upon manifest generation. (see [below for nested schema](#nestedblock--spec--source--helm--parameter))
-- `pass_credentials` (Boolean) If true then adds --pass-credentials to Helm commands to pass credentials to all domains
+- `pass_credentials` (Boolean) If true then adds '--pass-credentials' to Helm commands to pass credentials to all domains.
 - `release_name` (String) Helm release name. If omitted it will use the application name.
 - `skip_crds` (Boolean) Whether to skip custom resource definition installation step (Helm's [--skip-crds](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/)).
 - `value_files` (List of String) List of Helm value files to use when generating a template.
-- `values` (String) Helm values to be passed to helm template, typically defined as a block.
+- `values` (String) Helm values to be passed to 'helm template', typically defined as a block.
+
+<a id="nestedblock--spec--source--helm--file_parameter"></a>
+### Nested Schema for `spec.source.helm.file_parameter`
+
+Required:
+
+- `name` (String) Name of the Helm parameter.
+- `path` (String) Path to the file containing the values for the Helm parameter.
+
 
 <a id="nestedblock--spec--source--helm--parameter"></a>
 ### Nested Schema for `spec.source.helm.parameter`
@@ -368,6 +380,7 @@ Optional:
 Optional:
 
 - `automated` (Block Set, Max: 1) Whether to automatically keep an application synced to the target revision. (see [below for nested schema](#nestedblock--spec--sync_policy--automated))
+- `managed_namespace_metadata` (Block List, Max: 1) Controls metadata in the given namespace (if `CreateNamespace=true`). (see [below for nested schema](#nestedblock--spec--sync_policy--managed_namespace_metadata))
 - `retry` (Block List, Max: 1) Controls failed sync retry behavior. (see [below for nested schema](#nestedblock--spec--sync_policy--retry))
 - `sync_options` (List of String) List of sync options. More info: https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/.
 
@@ -379,6 +392,15 @@ Optional:
 - `allow_empty` (Boolean) Allows apps have zero live resources.
 - `prune` (Boolean) Whether to delete resources from the cluster that are not found in the sources anymore as part of automated sync.
 - `self_heal` (Boolean) Whether to revert resources back to their desired state upon modification in the cluster.
+
+
+<a id="nestedblock--spec--sync_policy--managed_namespace_metadata"></a>
+### Nested Schema for `spec.sync_policy.managed_namespace_metadata`
+
+Optional:
+
+- `annotations` (Map of String) Annotations to apply to the namespace.
+- `labels` (Map of String) Labels to apply to the namespace.
 
 
 <a id="nestedblock--spec--sync_policy--retry"></a>
@@ -410,6 +432,95 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `update` (String)
+
+
+<a id="nestedatt--status"></a>
+### Nested Schema for `status`
+
+Read-Only:
+
+- `conditions` (List of Object) (see [below for nested schema](#nestedobjatt--status--conditions))
+- `health` (List of Object) (see [below for nested schema](#nestedobjatt--status--health))
+- `operation_state` (List of Object) (see [below for nested schema](#nestedobjatt--status--operation_state))
+- `reconciled_at` (String)
+- `resources` (List of Object) (see [below for nested schema](#nestedobjatt--status--resources))
+- `summary` (List of Object) (see [below for nested schema](#nestedobjatt--status--summary))
+- `sync` (List of Object) (see [below for nested schema](#nestedobjatt--status--sync))
+
+<a id="nestedobjatt--status--conditions"></a>
+### Nested Schema for `status.conditions`
+
+Read-Only:
+
+- `last_transition_time` (String)
+- `message` (String)
+- `type` (String)
+
+
+<a id="nestedobjatt--status--health"></a>
+### Nested Schema for `status.health`
+
+Read-Only:
+
+- `message` (String)
+- `status` (String)
+
+
+<a id="nestedobjatt--status--operation_state"></a>
+### Nested Schema for `status.operation_state`
+
+Read-Only:
+
+- `finished_at` (String)
+- `message` (String)
+- `phase` (String)
+- `retry_count` (String)
+- `started_at` (String)
+
+
+<a id="nestedobjatt--status--resources"></a>
+### Nested Schema for `status.resources`
+
+Read-Only:
+
+- `group` (String)
+- `health` (List of Object) (see [below for nested schema](#nestedobjatt--status--resources--health))
+- `hook` (Boolean)
+- `kind` (String)
+- `name` (String)
+- `namespace` (String)
+- `requires_pruning` (Boolean)
+- `status` (String)
+- `sync_wave` (String)
+- `version` (String)
+
+<a id="nestedobjatt--status--resources--health"></a>
+### Nested Schema for `status.resources.health`
+
+Read-Only:
+
+- `message` (String)
+- `status` (String)
+
+
+
+<a id="nestedobjatt--status--summary"></a>
+### Nested Schema for `status.summary`
+
+Read-Only:
+
+- `external_urls` (List of String)
+- `images` (List of String)
+
+
+<a id="nestedobjatt--status--sync"></a>
+### Nested Schema for `status.sync`
+
+Read-Only:
+
+- `revision` (String)
+- `revisions` (List of String)
+- `status` (String)
 
 ## Import
 

@@ -11,19 +11,14 @@ import (
 
 // Expand
 
-func expandApplication(d *schema.ResourceData) (
-	metadata meta.ObjectMeta,
-	spec application.ApplicationSpec,
-	err error) {
+func expandApplication(d *schema.ResourceData) (metadata meta.ObjectMeta, spec application.ApplicationSpec, err error) {
 	metadata = expandMetadata(d)
 	spec, err = expandApplicationSpec(d.Get("spec.0").(map[string]interface{}))
 
 	return
 }
 
-func expandApplicationSpec(s map[string]interface{}) (
-	spec application.ApplicationSpec,
-	err error) {
+func expandApplicationSpec(s map[string]interface{}) (spec application.ApplicationSpec, err error) {
 	if v, ok := s["project"]; ok {
 		spec.Project = v.(string)
 	}
@@ -125,12 +120,10 @@ func expandApplicationSourcePlugin(in []interface{}) *application.ApplicationSou
 
 	if env, ok := a["env"]; ok {
 		for _, v := range env.(*schema.Set).List() {
-			result.Env = append(result.Env,
-				&application.EnvEntry{
-					Name:  v.(map[string]interface{})["name"].(string),
-					Value: v.(map[string]interface{})["value"].(string),
-				},
-			)
+			result.Env = append(result.Env, &application.EnvEntry{
+				Name:  v.(map[string]interface{})["name"].(string),
+				Value: v.(map[string]interface{})["value"].(string),
+			})
 		}
 	}
 
@@ -165,13 +158,11 @@ func expandApplicationSourceDirectory(in interface{}) *application.ApplicationSo
 			if evs, ok := j["ext_var"].([]interface{}); ok && len(evs) > 0 {
 				for _, v := range evs {
 					if vv, ok := v.(map[string]interface{}); ok {
-						jsonnet.ExtVars = append(jsonnet.ExtVars,
-							application.JsonnetVar{
-								Name:  vv["name"].(string),
-								Value: vv["value"].(string),
-								Code:  vv["code"].(bool),
-							},
-						)
+						jsonnet.ExtVars = append(jsonnet.ExtVars, application.JsonnetVar{
+							Name:  vv["name"].(string),
+							Value: vv["value"].(string),
+							Code:  vv["code"].(bool),
+						})
 					}
 				}
 			}
@@ -179,13 +170,11 @@ func expandApplicationSourceDirectory(in interface{}) *application.ApplicationSo
 			if tlas, ok := j["tla"].(*schema.Set); ok && len(tlas.List()) > 0 {
 				for _, v := range tlas.List() {
 					if vv, ok := v.(map[string]interface{}); ok {
-						jsonnet.TLAs = append(jsonnet.TLAs,
-							application.JsonnetVar{
-								Name:  vv["name"].(string),
-								Value: vv["value"].(string),
-								Code:  vv["code"].(bool),
-							},
-						)
+						jsonnet.TLAs = append(jsonnet.TLAs, application.JsonnetVar{
+							Name:  vv["name"].(string),
+							Value: vv["value"].(string),
+							Code:  vv["code"].(bool),
+						})
 					}
 				}
 			}
@@ -225,10 +214,7 @@ func expandApplicationSourceKustomize(in []interface{}) *application.Application
 
 	if v, ok := a["images"]; ok {
 		for _, i := range v.(*schema.Set).List() {
-			result.Images = append(
-				result.Images,
-				application.KustomizeImage(i.(string)),
-			)
+			result.Images = append(result.Images, application.KustomizeImage(i.(string)))
 		}
 	}
 
@@ -277,6 +263,10 @@ func expandApplicationSourceHelm(in []interface{}) *application.ApplicationSourc
 		result.PassCredentials = v.(bool)
 	}
 
+	if v, ok := a["ignore_missing_value_files"]; ok {
+		result.IgnoreMissingValueFiles = v.(bool)
+	}
+
 	if parameters, ok := a["parameter"]; ok {
 		for _, _p := range parameters.(*schema.Set).List() {
 			p := _p.(map[string]interface{})
@@ -299,6 +289,24 @@ func expandApplicationSourceHelm(in []interface{}) *application.ApplicationSourc
 		}
 	}
 
+	if fileParameters, ok := a["file_parameter"]; ok {
+		for _, _p := range fileParameters.(*schema.Set).List() {
+			p := _p.(map[string]interface{})
+
+			parameter := application.HelmFileParameter{}
+
+			if v, ok := p["name"]; ok {
+				parameter.Name = v.(string)
+			}
+
+			if v, ok := p["path"]; ok {
+				parameter.Path = v.(string)
+			}
+
+			result.FileParameters = append(result.FileParameters, parameter)
+		}
+	}
+
 	if v, ok := a["skip_crds"]; ok {
 		result.SkipCrds = v.(bool)
 	}
@@ -307,13 +315,15 @@ func expandApplicationSourceHelm(in []interface{}) *application.ApplicationSourc
 }
 
 func expandApplicationSyncPolicy(sp interface{}) (*application.SyncPolicy, error) {
-	if sp == nil {
-		return &application.SyncPolicy{}, nil
-	}
-
 	var syncPolicy = &application.SyncPolicy{}
 
-	if _a, ok := sp.(map[string]interface{})["automated"].(*schema.Set); ok {
+	if sp == nil {
+		return syncPolicy, nil
+	}
+
+	p := sp.(map[string]interface{})
+
+	if _a, ok := p["automated"].(*schema.Set); ok {
 		var automated = &application.SyncPolicyAutomated{}
 
 		list := _a.List()
@@ -336,69 +346,76 @@ func expandApplicationSyncPolicy(sp interface{}) (*application.SyncPolicy, error
 		}
 	}
 
-	if v, ok := sp.(map[string]interface{})["sync_options"]; ok {
+	if _sOpts, ok := p["sync_options"].([]interface{}); ok && len(_sOpts) > 0 {
 		var syncOptions application.SyncOptions
 
-		sOpts := v.([]interface{})
-		if len(sOpts) > 0 {
-			for _, sOpt := range sOpts {
-				syncOptions = append(syncOptions, sOpt.(string))
-			}
-
-			syncPolicy.SyncOptions = syncOptions
+		for _, so := range _sOpts {
+			syncOptions = append(syncOptions, so.(string))
 		}
+
+		syncPolicy.SyncOptions = syncOptions
 	}
 
-	if _retry, ok := sp.(map[string]interface{})["retry"].([]interface{}); ok {
-		if len(_retry) > 0 {
-			var retry = &application.RetryStrategy{}
+	if _retry, ok := p["retry"].([]interface{}); ok && len(_retry) > 0 {
+		var retry = &application.RetryStrategy{}
 
-			r := (_retry[0]).(map[string]interface{})
+		r := (_retry[0]).(map[string]interface{})
 
-			if v, ok := r["limit"]; ok {
-				var err error
+		if v, ok := r["limit"]; ok {
+			var err error
 
-				retry.Limit, err = convertStringToInt64(v.(string))
-				if err != nil {
-					return nil, fmt.Errorf("failed to convert retry limit to integer: %w", err)
+			retry.Limit, err = convertStringToInt64(v.(string))
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert retry limit to integer: %w", err)
+			}
+		}
+
+		if _b, ok := r["backoff"].(*schema.Set); ok {
+			retry.Backoff = &application.Backoff{}
+
+			list := _b.List()
+			if len(list) > 0 {
+				b := list[0].(map[string]interface{})
+
+				if v, ok := b["duration"]; ok {
+					retry.Backoff.Duration = v.(string)
+				}
+
+				if v, ok := b["max_duration"]; ok {
+					retry.Backoff.MaxDuration = v.(string)
+				}
+
+				if v, ok := b["factor"]; ok {
+					factor, err := convertStringToInt64Pointer(v.(string))
+					if err != nil {
+						return nil, fmt.Errorf("failed to convert backoff factor to integer: %w", err)
+					}
+
+					retry.Backoff.Factor = factor
 				}
 			}
+		}
 
-			if _b, ok := r["backoff"].(*schema.Set); ok {
-				retry.Backoff = &application.Backoff{}
+		syncPolicy.Retry = retry
+	}
 
-				list := _b.List()
-				if len(list) > 0 {
-					b := list[0].(map[string]interface{})
+	if _mnm, ok := p["managed_namespace_metadata"].([]interface{}); ok && len(_mnm) > 0 {
+		mnm := _mnm[0].(map[string]interface{})
+		syncPolicy.ManagedNamespaceMetadata = &application.ManagedNamespaceMetadata{}
 
-					if v, ok := b["duration"]; ok {
-						retry.Backoff.Duration = v.(string)
-					}
+		if a, ok := mnm["annotations"]; ok {
+			syncPolicy.ManagedNamespaceMetadata.Annotations = expandStringMap(a.(map[string]interface{}))
+		}
 
-					if v, ok := b["max_duration"]; ok {
-						retry.Backoff.MaxDuration = v.(string)
-					}
-
-					if v, ok := b["factor"]; ok {
-						factor, err := convertStringToInt64Pointer(v.(string))
-						if err != nil {
-							return nil, fmt.Errorf("failed to convert backoff factor to integer: %w", err)
-						}
-
-						retry.Backoff.Factor = factor
-					}
-				}
-			}
-
-			syncPolicy.Retry = retry
+		if l, ok := mnm["labels"]; ok {
+			syncPolicy.ManagedNamespaceMetadata.Labels = expandStringMap(l.(map[string]interface{}))
 		}
 	}
 
 	return syncPolicy, nil
 }
 
-func expandApplicationIgnoreDifferences(ids []interface{}) (
-	result []application.ResourceIgnoreDifferences) {
+func expandApplicationIgnoreDifferences(ids []interface{}) (result []application.ResourceIgnoreDifferences) {
 	for _, _id := range ids {
 		id := _id.(map[string]interface{})
 
@@ -440,8 +457,7 @@ func expandApplicationIgnoreDifferences(ids []interface{}) (
 	return //nolint:nakedret // overriding as function follows pattern in rest of file
 }
 
-func expandApplicationInfo(infos *schema.Set) (
-	result []application.Info, err error) {
+func expandApplicationInfo(infos *schema.Set) (result []application.Info, err error) {
 	for _, i := range infos.List() {
 		item := i.(map[string]interface{})
 		info := application.Info{}
@@ -475,8 +491,7 @@ func expandApplicationDestinations(ds *schema.Set) (result []application.Applica
 	return
 }
 
-func expandApplicationDestination(dest interface{}) (
-	result application.ApplicationDestination) {
+func expandApplicationDestination(dest interface{}) (result application.ApplicationDestination) {
 	d, ok := dest.(map[string]interface{})
 	if !ok {
 		panic(fmt.Errorf("could not expand application destination"))
@@ -493,18 +508,15 @@ func expandSyncWindows(sws []interface{}) (result []*application.SyncWindow) {
 	for _, _sw := range sws {
 		sw := _sw.(map[string]interface{})
 
-		result = append(
-			result,
-			&application.SyncWindow{
-				Applications: expandStringList(sw["applications"].([]interface{})),
-				Clusters:     expandStringList(sw["clusters"].([]interface{})),
-				Duration:     sw["duration"].(string),
-				Kind:         sw["kind"].(string),
-				ManualSync:   sw["manual_sync"].(bool),
-				Namespaces:   expandStringList(sw["namespaces"].([]interface{})),
-				Schedule:     sw["schedule"].(string),
-			},
-		)
+		result = append(result, &application.SyncWindow{
+			Applications: expandStringList(sw["applications"].([]interface{})),
+			Clusters:     expandStringList(sw["clusters"].([]interface{})),
+			Duration:     sw["duration"].(string),
+			Kind:         sw["kind"].(string),
+			ManualSync:   sw["manual_sync"].(bool),
+			Namespaces:   expandStringList(sw["namespaces"].([]interface{})),
+			Schedule:     sw["schedule"].(string),
+		})
 	}
 
 	return
@@ -513,17 +525,22 @@ func expandSyncWindows(sws []interface{}) (result []*application.SyncWindow) {
 // Flatten
 
 func flattenApplication(app *application.Application, d *schema.ResourceData) error {
-	fMetadata := flattenMetadata(app.ObjectMeta, d)
-	fSpec := flattenApplicationSpec(app.Spec)
+	metadata := flattenMetadata(app.ObjectMeta, d)
+	if err := d.Set("metadata", metadata); err != nil {
+		e, _ := json.MarshalIndent(metadata, "", "\t")
+		return fmt.Errorf("error persisting metadata: %s\n%s", err, e)
+	}
 
-	if err := d.Set("spec", fSpec); err != nil {
-		e, _ := json.MarshalIndent(fSpec, "", "\t")
+	spec := flattenApplicationSpec(app.Spec)
+	if err := d.Set("spec", spec); err != nil {
+		e, _ := json.MarshalIndent(spec, "", "\t")
 		return fmt.Errorf("error persisting spec: %s\n%s", err, e)
 	}
 
-	if err := d.Set("metadata", fMetadata); err != nil {
-		e, _ := json.MarshalIndent(fMetadata, "", "\t")
-		return fmt.Errorf("error persisting metadata: %s\n%s", err, e)
+	status := flattenApplicationStatus(app.Status)
+	if err := d.Set("status", status); err != nil {
+		e, _ := json.MarshalIndent(status, "", "\t")
+		return fmt.Errorf("error persisting status: %s\n%s", err, e)
 	}
 
 	return nil
@@ -531,9 +548,7 @@ func flattenApplication(app *application.Application, d *schema.ResourceData) er
 
 func flattenApplicationSpec(s application.ApplicationSpec) []map[string]interface{} {
 	spec := map[string]interface{}{
-		"destination": flattenApplicationDestinations(
-			[]application.ApplicationDestination{s.Destination},
-		),
+		"destination":       flattenApplicationDestinations([]application.ApplicationDestination{s.Destination}),
 		"ignore_difference": flattenApplicationIgnoreDifferences(s.IgnoreDifferences),
 		"info":              flattenApplicationInfo(s.Info),
 		"project":           s.Project,
@@ -541,9 +556,7 @@ func flattenApplicationSpec(s application.ApplicationSpec) []map[string]interfac
 	}
 
 	if s.Source != nil {
-		spec["source"] = flattenApplicationSource(
-			[]application.ApplicationSource{*s.Source},
-		)
+		spec["source"] = flattenApplicationSource([]application.ApplicationSource{*s.Source})
 	} else {
 		spec["source"] = flattenApplicationSource(s.Sources)
 	}
@@ -569,6 +582,15 @@ func flattenApplicationSyncPolicy(sp *application.SyncPolicy) []map[string]inter
 				"prune":       sp.Automated.Prune,
 				"self_heal":   sp.Automated.SelfHeal,
 				"allow_empty": sp.Automated.AllowEmpty,
+			},
+		}
+	}
+
+	if sp.ManagedNamespaceMetadata != nil {
+		result["managed_namespace_metadata"] = []map[string]interface{}{
+			{
+				"annotations": sp.ManagedNamespaceMetadata.Annotations,
+				"labels":      sp.ManagedNamespaceMetadata.Labels,
 			},
 		}
 	}
@@ -599,8 +621,7 @@ func flattenApplicationSyncPolicy(sp *application.SyncPolicy) []map[string]inter
 	return []map[string]interface{}{result}
 }
 
-func flattenApplicationInfo(infos []application.Info) (
-	result []map[string]string) {
+func flattenApplicationInfo(infos []application.Info) (result []map[string]string) {
 	for _, i := range infos {
 		info := map[string]string{}
 
@@ -618,8 +639,7 @@ func flattenApplicationInfo(infos []application.Info) (
 	return
 }
 
-func flattenApplicationIgnoreDifferences(ids []application.ResourceIgnoreDifferences) (
-	result []map[string]interface{}) {
+func flattenApplicationIgnoreDifferences(ids []application.ResourceIgnoreDifferences) (result []map[string]interface{}) {
 	for _, id := range ids {
 		result = append(result, map[string]interface{}{
 			"group":               id.Group,
@@ -634,24 +654,15 @@ func flattenApplicationIgnoreDifferences(ids []application.ResourceIgnoreDiffere
 	return
 }
 
-func flattenApplicationSource(source []application.ApplicationSource) (
-	result []map[string]interface{}) {
+func flattenApplicationSource(source []application.ApplicationSource) (result []map[string]interface{}) {
 	for _, s := range source {
 		result = append(result, map[string]interface{}{
-			"chart": s.Chart,
-			"directory": flattenApplicationSourceDirectory(
-				[]*application.ApplicationSourceDirectory{s.Directory},
-			),
-			"helm": flattenApplicationSourceHelm(
-				[]*application.ApplicationSourceHelm{s.Helm},
-			),
-			"kustomize": flattenApplicationSourceKustomize(
-				[]*application.ApplicationSourceKustomize{s.Kustomize},
-			),
-			"path": s.Path,
-			"plugin": flattenApplicationSourcePlugin(
-				[]*application.ApplicationSourcePlugin{s.Plugin},
-			),
+			"chart":           s.Chart,
+			"directory":       flattenApplicationSourceDirectory([]*application.ApplicationSourceDirectory{s.Directory}),
+			"helm":            flattenApplicationSourceHelm([]*application.ApplicationSourceHelm{s.Helm}),
+			"kustomize":       flattenApplicationSourceKustomize([]*application.ApplicationSourceKustomize{s.Kustomize}),
+			"path":            s.Path,
+			"plugin":          flattenApplicationSourcePlugin([]*application.ApplicationSourcePlugin{s.Plugin}),
 			"ref":             s.Ref,
 			"repo_url":        s.RepoURL,
 			"target_revision": s.TargetRevision,
@@ -661,8 +672,7 @@ func flattenApplicationSource(source []application.ApplicationSource) (
 	return
 }
 
-func flattenApplicationSourcePlugin(as []*application.ApplicationSourcePlugin) (
-	result []map[string]interface{}) {
+func flattenApplicationSourcePlugin(as []*application.ApplicationSourcePlugin) (result []map[string]interface{}) {
 	for _, a := range as {
 		if a != nil {
 			var env []map[string]string
@@ -683,8 +693,7 @@ func flattenApplicationSourcePlugin(as []*application.ApplicationSourcePlugin) (
 	return
 }
 
-func flattenApplicationSourceDirectory(as []*application.ApplicationSourceDirectory) (
-	result []map[string]interface{}) {
+func flattenApplicationSourceDirectory(as []*application.ApplicationSourceDirectory) (result []map[string]interface{}) {
 	for _, a := range as {
 		if a != nil && !a.IsZero() {
 			jsonnet := make(map[string][]interface{}, 0)
@@ -725,8 +734,7 @@ func flattenApplicationSourceDirectory(as []*application.ApplicationSourceDirect
 	return //nolint:nakedret // only just breaching - function follows pattern in rest of file
 }
 
-func flattenApplicationSourceKustomize(as []*application.ApplicationSourceKustomize) (
-	result []map[string]interface{}) {
+func flattenApplicationSourceKustomize(as []*application.ApplicationSourceKustomize) (result []map[string]interface{}) {
 	for _, a := range as {
 		if a != nil {
 			var images []string
@@ -748,8 +756,7 @@ func flattenApplicationSourceKustomize(as []*application.ApplicationSourceKustom
 	return
 }
 
-func flattenApplicationSourceHelm(as []*application.ApplicationSourceHelm) (
-	result []map[string]interface{}) {
+func flattenApplicationSourceHelm(as []*application.ApplicationSourceHelm) (result []map[string]interface{}) {
 	for _, a := range as {
 		if a != nil {
 			var parameters []map[string]interface{}
@@ -761,22 +768,31 @@ func flattenApplicationSourceHelm(as []*application.ApplicationSourceHelm) (
 				})
 			}
 
+			var fileParameters []map[string]interface{}
+			for _, p := range a.FileParameters {
+				fileParameters = append(fileParameters, map[string]interface{}{
+					"name": p.Name,
+					"path": p.Path,
+				})
+			}
+
 			result = append(result, map[string]interface{}{
-				"parameter":        parameters,
-				"release_name":     a.ReleaseName,
-				"skip_crds":        a.SkipCrds,
-				"value_files":      a.ValueFiles,
-				"values":           a.Values,
-				"pass_credentials": a.PassCredentials,
+				"parameter":                  parameters,
+				"file_parameter":             fileParameters,
+				"release_name":               a.ReleaseName,
+				"skip_crds":                  a.SkipCrds,
+				"value_files":                a.ValueFiles,
+				"values":                     a.Values,
+				"pass_credentials":           a.PassCredentials,
+				"ignore_missing_value_files": a.IgnoreMissingValueFiles,
 			})
 		}
 	}
 
-	return
+	return result
 }
 
-func flattenApplicationDestinations(ds []application.ApplicationDestination) (
-	result []map[string]string) {
+func flattenApplicationDestinations(ds []application.ApplicationDestination) (result []map[string]string) {
 	for _, d := range ds {
 		result = append(result, map[string]string{
 			"namespace": d.Namespace,
@@ -786,4 +802,108 @@ func flattenApplicationDestinations(ds []application.ApplicationDestination) (
 	}
 
 	return
+}
+
+func flattenApplicationStatus(s application.ApplicationStatus) []map[string]interface{} {
+	status := map[string]interface{}{
+		"conditions": flattenApplicationConditions(s.Conditions),
+		"health":     flattenApplicationHealthStatus(s.Health),
+		"resources":  flattenApplicationResourceStatuses(s.Resources),
+		"summary":    flattenApplicationSummary(s.Summary),
+		"sync":       flattenApplicationSyncStatus(s.Sync),
+	}
+
+	if s.OperationState != nil {
+		status["operation_state"] = flattenApplicationOperationState(*s.OperationState)
+	}
+
+	if s.ReconciledAt != nil {
+		status["reconciled_at"] = s.ReconciledAt.String()
+	}
+
+	return []map[string]interface{}{status}
+}
+
+func flattenApplicationConditions(aacs []application.ApplicationCondition) []map[string]interface{} {
+	acs := make([]map[string]interface{}, len(aacs))
+
+	for i, v := range aacs {
+		acs[i] = map[string]interface{}{
+			"message": v.Message,
+			"type":    v.Type,
+		}
+
+		if v.LastTransitionTime != nil {
+			acs[i]["last_transition_time"] = v.LastTransitionTime.String()
+		}
+	}
+
+	return acs
+}
+
+func flattenApplicationHealthStatus(hs application.HealthStatus) []map[string]interface{} {
+	h := map[string]interface{}{
+		"message": hs.Message,
+		"status":  hs.Status,
+	}
+
+	return []map[string]interface{}{h}
+}
+
+func flattenApplicationSyncStatus(ss application.SyncStatus) []map[string]interface{} {
+	s := map[string]interface{}{
+		"revision":  ss.Revision,
+		"revisions": ss.Revisions,
+		"status":    ss.Status,
+	}
+
+	return []map[string]interface{}{s}
+}
+
+func flattenApplicationResourceStatuses(arss []application.ResourceStatus) []map[string]interface{} {
+	rss := make([]map[string]interface{}, len(arss))
+
+	for i, v := range arss {
+		rss[i] = map[string]interface{}{
+			"group":            v.Group,
+			"hook":             v.Hook,
+			"kind":             v.Kind,
+			"name":             v.Name,
+			"namespace":        v.Namespace,
+			"requires_pruning": v.RequiresPruning,
+			"status":           v.Status,
+			"sync_wave":        convertInt64ToString(v.SyncWave),
+			"version":          v.Version,
+		}
+
+		if v.Health != nil {
+			rss[i]["health"] = flattenApplicationHealthStatus(*v.Health)
+		}
+	}
+
+	return rss
+}
+
+func flattenApplicationSummary(as application.ApplicationSummary) []map[string]interface{} {
+	s := map[string]interface{}{
+		"external_urls": as.ExternalURLs,
+		"images":        as.Images,
+	}
+
+	return []map[string]interface{}{s}
+}
+
+func flattenApplicationOperationState(os application.OperationState) []map[string]interface{} {
+	s := map[string]interface{}{
+		"message":     os.Message,
+		"phase":       os.Phase,
+		"retry_count": convertInt64ToString(os.RetryCount),
+		"started_at":  os.StartedAt.String(),
+	}
+
+	if os.FinishedAt != nil {
+		s["finished_at"] = os.FinishedAt.String()
+	}
+
+	return []map[string]interface{}{s}
 }

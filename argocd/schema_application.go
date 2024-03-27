@@ -1322,7 +1322,12 @@ func applicationSpecSchemaV4(allOptional bool) *schema.Schema {
 										},
 										"values": {
 											Type:        schema.TypeString,
-											Description: "Helm values to be passed to helm template, typically defined as a block.",
+											Description: "Helm values to be passed to 'helm template', typically defined as a block.",
+											Optional:    true,
+										},
+										"ignore_missing_value_files": {
+											Type:        schema.TypeBool,
+											Description: "Prevents 'helm template' from failing when `value_files` do not exist locally by not appending them to 'helm template --values'.",
 											Optional:    true,
 										},
 										"parameter": {
@@ -1349,6 +1354,25 @@ func applicationSpecSchemaV4(allOptional bool) *schema.Schema {
 												},
 											},
 										},
+										"file_parameter": {
+											Type:        schema.TypeSet,
+											Description: "File parameters for the helm template.",
+											Optional:    true,
+											Elem: &schema.Resource{
+												Schema: map[string]*schema.Schema{
+													"name": {
+														Type:        schema.TypeString,
+														Description: "Name of the Helm parameter.",
+														Required:    true,
+													},
+													"path": {
+														Type:        schema.TypeString,
+														Description: "Path to the file containing the values for the Helm parameter.",
+														Required:    true,
+													},
+												},
+											},
+										},
 										"release_name": {
 											Type:        schema.TypeString,
 											Description: "Helm release name. If omitted it will use the application name.",
@@ -1361,7 +1385,7 @@ func applicationSpecSchemaV4(allOptional bool) *schema.Schema {
 										},
 										"pass_credentials": {
 											Type:        schema.TypeBool,
-											Description: "If true then adds --pass-credentials to Helm commands to pass credentials to all domains",
+											Description: "If true then adds '--pass-credentials' to Helm commands to pass credentials to all domains.",
 											Optional:    true,
 										},
 									},
@@ -1650,6 +1674,30 @@ func applicationSpecSchemaV4(allOptional bool) *schema.Schema {
 									},
 								},
 							},
+							"managed_namespace_metadata": {
+								Type:        schema.TypeList,
+								MaxItems:    1,
+								Description: "Controls metadata in the given namespace (if `CreateNamespace=true`).",
+								Optional:    true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"annotations": {
+											Type:         schema.TypeMap,
+											Description:  "Annotations to apply to the namespace.",
+											Optional:     true,
+											Elem:         &schema.Schema{Type: schema.TypeString},
+											ValidateFunc: validateMetadataAnnotations,
+										},
+										"labels": {
+											Type:         schema.TypeMap,
+											Description:  "Labels to apply to the namespace.",
+											Optional:     true,
+											Elem:         &schema.Schema{Type: schema.TypeString},
+											ValidateFunc: validateMetadataLabels,
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -1762,6 +1810,210 @@ func resourceArgoCDApplicationV3() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"metadata": metadataSchema("appprojects.argoproj.io"),
 			"spec":     applicationSpecSchemaV3(),
+		},
+	}
+}
+
+func applicationStatusSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeList,
+		Description: "Status information for the application. **Note**: this is not guaranteed to be up to date immediately after creating/updating an application unless `wait=true`.",
+		Computed:    true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"conditions": {
+					Type:        schema.TypeList,
+					Description: "List of currently observed application conditions.",
+					Computed:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"message": {
+								Type:        schema.TypeString,
+								Description: "Human-readable message indicating details about condition.",
+								Computed:    true,
+							},
+							"last_transition_time": {
+								Type:        schema.TypeString,
+								Description: "The time the condition was last observed.",
+								Computed:    true,
+							},
+							"type": {
+								Type:        schema.TypeString,
+								Description: "Application condition type.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+				"health": {
+					Type:        schema.TypeList,
+					Description: "Application's current health status.",
+					Computed:    true,
+					Elem:        resourceApplicationHealthStatus(),
+				},
+				"operation_state": {
+					Type:        schema.TypeList,
+					Description: "Information about any ongoing operations, such as a sync.",
+					Computed:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"finished_at": {
+								Type:        schema.TypeString,
+								Description: "Time of operation completion.",
+								Computed:    true,
+							},
+							"message": {
+								Type:        schema.TypeString,
+								Description: "Any pertinent messages when attempting to perform operation (typically errors).",
+								Computed:    true,
+							},
+							"phase": {
+								Type:        schema.TypeString,
+								Description: "The current phase of the operation.",
+								Computed:    true,
+							},
+							"retry_count": {
+								Type:        schema.TypeString,
+								Description: "Count of operation retries.",
+								Computed:    true,
+							},
+							"started_at": {
+								Type:        schema.TypeString,
+								Description: "Time of operation start.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+				"reconciled_at": {
+					Type:        schema.TypeString,
+					Description: "When the application state was reconciled using the latest git version.",
+					Computed:    true,
+				},
+				"resources": {
+					Type:        schema.TypeList,
+					Description: "List of Kubernetes resources managed by this application.",
+					Computed:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"group": {
+								Type:        schema.TypeString,
+								Description: "The Kubernetes resource Group.",
+								Computed:    true,
+							},
+							"health": {
+								Type:        schema.TypeList,
+								Description: "Resource health status.",
+								Computed:    true,
+								Elem:        resourceApplicationHealthStatus(),
+							},
+							"kind": {
+								Type:        schema.TypeString,
+								Description: "The Kubernetes resource Kind.",
+								Computed:    true,
+							},
+							"hook": {
+								Type:        schema.TypeBool,
+								Description: "Indicates whether or not this resource has a hook annotation.",
+								Computed:    true,
+							},
+							"name": {
+								Type:        schema.TypeString,
+								Description: "The Kubernetes resource Name.",
+								Computed:    true,
+							},
+							"namespace": {
+								Type:        schema.TypeString,
+								Description: "The Kubernetes resource Namespace.",
+								Computed:    true,
+							},
+							"requires_pruning": {
+								Type:        schema.TypeBool,
+								Description: "Indicates if the resources requires pruning or not.",
+								Computed:    true,
+							},
+							"status": {
+								Type:        schema.TypeString,
+								Description: "Resource sync status.",
+								Computed:    true,
+							},
+							"sync_wave": {
+								Type:        schema.TypeString,
+								Description: "Sync wave.",
+								Computed:    true,
+							},
+							"version": {
+								Type:        schema.TypeString,
+								Description: "The Kubernetes resource Version.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+				"summary": {
+					Type:        schema.TypeList,
+					Description: "List of URLs and container images used by this application.",
+					Computed:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"external_urls": {
+								Type:        schema.TypeList,
+								Description: "All external URLs of application child resources.",
+								Computed:    true,
+								Elem:        schema.TypeString,
+							},
+							"images": {
+								Type:        schema.TypeList,
+								Description: "All images of application child resources.",
+								Computed:    true,
+								Elem:        schema.TypeString,
+							},
+						},
+					},
+				},
+				"sync": {
+					Type:        schema.TypeList,
+					Description: "Application's current sync status",
+					Computed:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"revision": {
+								Type:        schema.TypeString,
+								Description: "Information about the revision the comparison has been performed to.",
+								Computed:    true,
+							},
+							"revisions": {
+								Type:        schema.TypeList,
+								Description: "Information about the revision(s) the comparison has been performed to.",
+								Computed:    true,
+								Elem:        schema.TypeString,
+							},
+							"status": {
+								Type:        schema.TypeString,
+								Description: "Sync state of the comparison.",
+								Computed:    true,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func resourceApplicationHealthStatus() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"message": {
+				Type:        schema.TypeString,
+				Description: "Human-readable informational message describing the health status.",
+				Computed:    true,
+			},
+			"status": {
+				Type:        schema.TypeString,
+				Description: "Status code of the application or resource.",
+				Computed:    true,
+			},
 		},
 	}
 }

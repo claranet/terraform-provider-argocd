@@ -48,13 +48,12 @@ func TestAccArgoCDCluster(t *testing.T) {
 					),
 				),
 			},
-			// TODO: not working on CI every time
-			// {
-			// 	ResourceName:            "argocd_cluster.simple",
-			// 	ImportState:             true,
-			// 	ImportStateVerify:       true,
-			// 	ImportStateVerifyIgnore: []string{"config.0.bearer_token", "config.0.tls_client_config"},
-			// },
+			{
+				ResourceName:            "argocd_cluster.simple",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token"},
+			},
 			{
 				Config: testAccArgoCDClusterTLSCertificate(t, acctest.RandString(10)),
 				Check: resource.ComposeTestCheckFunc(
@@ -81,7 +80,7 @@ func TestAccArgoCDCluster(t *testing.T) {
 
 func TestAccArgoCDCluster_projectScope(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t); testAccPreCheckFeatureSupported(t, featureProjectScopedClusters) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -104,13 +103,12 @@ func TestAccArgoCDCluster_projectScope(t *testing.T) {
 					),
 				),
 			},
-			// TODO: not working on CI every time
-			// {
-			// 	ResourceName:            "argocd_cluster.project_scope",
-			// 	ImportState:             true,
-			// 	ImportStateVerify:       true,
-			// 	ImportStateVerifyIgnore: []string{"config.0.bearer_token", "config.0.tls_client_config"},
-			// },
+			{
+				ResourceName:            "argocd_cluster.project_scope",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token"},
+			},
 		},
 	})
 }
@@ -119,7 +117,7 @@ func TestAccArgoCDCluster_optionalName(t *testing.T) {
 	name := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t); testAccPreCheckFeatureSupported(t, featureProjectScopedClusters) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -190,7 +188,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 	clusterName := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t); testAccPreCheckFeatureSupported(t, featureClusterMetadata) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -206,7 +204,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 				ResourceName:            "argocd_cluster.cluster_metadata",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"config", "info"},
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token", "info"},
 			},
 			{
 				Config: testAccArgoCDClusterMetadata_addLabels(clusterName),
@@ -226,7 +224,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 				ResourceName:            "argocd_cluster.cluster_metadata",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"config", "info"},
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token", "info"},
 			},
 			{
 				Config: testAccArgoCDClusterMetadata_addAnnotations(clusterName),
@@ -247,7 +245,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 				ResourceName:            "argocd_cluster.cluster_metadata",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"config", "info"},
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token", "info"},
 			},
 			{
 				Config: testAccArgoCDClusterMetadata_removeLabels(clusterName),
@@ -267,7 +265,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 				ResourceName:            "argocd_cluster.cluster_metadata",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"config", "info"},
+				ImportStateVerifyIgnore: []string{"config.0.bearer_token", "info"},
 			},
 		},
 	})
@@ -275,7 +273,7 @@ func TestAccArgoCDCluster_metadata(t *testing.T) {
 
 func TestAccArgoCDCluster_invalidSameServer(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t); testAccPreCheckFeatureSupported(t, featureProjectScopedClusters) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
@@ -298,7 +296,7 @@ func TestAccArgoCDCluster_namespacesErrorWhenEmpty(t *testing.T) {
 	name := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t); testAccPreCheckFeatureSupported(t, featureProjectScopedClusters) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
