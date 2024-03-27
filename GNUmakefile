@@ -41,7 +41,7 @@ testacc_prepare_env:
 	kustomize version || exit 1
 
 	echo "\n--- Create Kind cluster\n"
-	kind create cluster --config kind-config.yml 
+	kind create cluster --config kind-config.yml
 
 	echo "\n--- Kind sanity checks\n"
 	kubectl get nodes -o wide
@@ -60,7 +60,7 @@ testacc_prepare_env:
 	kubectl wait --for=condition=available --timeout=30s deployment/argocd-repo-server -n argocd
 	kubectl wait --for=condition=available --timeout=30s deployment/argocd-dex-server -n argocd
 	kubectl wait --for=condition=available --timeout=30s deployment/argocd-redis -n argocd
-	
+
 clean:
 	git clean -fXd -e \!vendor -e \!vendor/**/* -e \!.vscode
 
