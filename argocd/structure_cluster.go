@@ -81,6 +81,10 @@ func expandClusterConfig(config interface{}) application.ClusterConfig {
 		clusterConfig.Password = v.(string)
 	}
 
+	if proxy, ok := c["proxy"]; ok {
+		clusterConfig.ProxyUrl = proxy.(string)
+	}
+
 	if tls, ok := c["tls_client_config"].([]interface{}); ok && len(tls) > 0 {
 		clusterConfig.TLSClientConfig = application.TLSClientConfig{}
 
@@ -177,6 +181,7 @@ func flattenClusterInfo(info application.ClusterInfo) []map[string]interface{} {
 func flattenClusterConfig(config application.ClusterConfig, d *schema.ResourceData) []map[string]interface{} {
 	r := map[string]interface{}{
 		"username":             config.Username,
+		"proxy":                config.ProxyUrl,
 		"exec_provider_config": flattenClusterConfigExecProviderConfig(config.ExecProviderConfig, d),
 		"tls_client_config":    flattenClusterConfigTLSClientConfig(config.TLSClientConfig, d),
 	}
